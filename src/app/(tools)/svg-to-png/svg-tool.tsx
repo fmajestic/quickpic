@@ -6,7 +6,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { UploadBox } from "@/components/shared/upload-box";
 import { SVGScaleSelector } from "@/components/svg-scale-selector";
 
-export type Scale = "custom" | number;
+export type Scale = "custom" | "height" | number;
 
 function scaleSvg(svgContent: string, scale: number) {
   const parser = new DOMParser();
@@ -146,9 +146,17 @@ function SVGToolCore(props: { fileUploaderProps: FileUploaderResult }) {
     "svgTool_customScale",
     1,
   );
+  const [customHeight, setCustomHeight] = useLocalStorage<number>(
+    "svgTool_customHeight",
+    imageMetadata?.height ?? 100,
+  );
 
   // Get the actual numeric scale value
-  const effectiveScale = scale === "custom" ? customScale : scale;
+  const effectiveScale = scale === "custom"
+    ? customScale
+    : scale === "height"
+      ? (customHeight / (imageMetadata?.height ?? 1))
+      : scale;
 
   if (!imageMetadata)
     return (
@@ -182,7 +190,7 @@ function SVGToolCore(props: { fileUploaderProps: FileUploaderResult }) {
         <div className="flex flex-col items-center rounded-lg bg-white/5 p-3">
           <span className="text-sm text-white/60">Scaled</span>
           <span className="font-medium text-white">
-            {imageMetadata.width * effectiveScale} ×{" "}
+            {(imageMetadata.width * effectiveScale).toFixed(effectiveScale % 1 === 0 ? 0 : 2)}{" "}×{" "}
             {imageMetadata.height * effectiveScale}
           </span>
         </div>
@@ -196,6 +204,8 @@ function SVGToolCore(props: { fileUploaderProps: FileUploaderResult }) {
         onChange={setScale}
         customValue={customScale}
         onCustomValueChange={setCustomScale}
+        customHeight={customHeight}
+        onCustomHeightChange={setCustomHeight}
       />
 
       {/* Action Buttons */}
